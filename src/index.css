@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* #2384A4
+#5F575E
+#2E4352
+#E8E7E8
+#A5A0A4
+#5DA6BB */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px rgb(51 65 85 / var(--tw-bg-opacity)) inset !important;
+}
+
+input:-webkit-autofill {
+  -webkit-text-fill-color: white !important;
+}
+
+.poppins-regular {
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.poppins-medium {
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
 body {
   margin: 0;
   padding: 0;
