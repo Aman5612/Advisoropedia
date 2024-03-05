@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AiOutlineUser } from "react-icons/ai";
 import { MdOutlineMail } from "react-icons/md";
 import { IoMdEyeOff } from "react-icons/io";
@@ -7,16 +7,20 @@ import { IoMdEye } from "react-icons/io";
 import IMG1 from "../assets/IMG1.jpg";
 import IMG2 from "../assets/placeholder.jpg";
 import "../index.css";
+import { validationSchema } from "../lib/validations";
 
 const SignUpPage = () => {
   const [visible, setVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
-
+  const [submit, setSubmit] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [firstHasContent, setFirstHasContent] = useState(false);
   const [emailHasContent, setEmailHasContent] = useState(false);
   const [passwordHasContent, setPasswordHasContent] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState(false);
+  const [errors, setValidationErrors] = useState({});
+  const [termsAndConditions, setTermsAndConditions] = useState(false);
+  const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -28,19 +32,26 @@ const SignUpPage = () => {
     switch (fieldName) {
       case "first-name":
         setFirstHasContent(event.target.value !== "");
+        setValidationErrors({});
         break;
       case "email":
         setEmailHasContent(event.target.value !== "");
+        setValidationErrors({});
         break;
       case "password":
         setPasswordHasContent(event.target.value !== "");
         setMatchPassword(true);
         setPassword(event.target.value);
+        setValidationErrors({});
         break;
       case "confirm":
         setConfirmPassword(event.target.value !== "");
         setMatchPassword(true);
         setConfirm(event.target.value);
+        setValidationErrors({});
+        break;
+      case "termsAndConditions":
+        setTermsAndConditions(event.target.checked);
         break;
       default:
         break;
@@ -61,14 +72,76 @@ const SignUpPage = () => {
   const handleVisibility = () => {
     setVisible(!visible);
   };
+
   const handleVisibility2 = () => {
     setConfirmVisible(!confirmVisible);
   };
 
   const handleSubmit = (event) => {
+    setSubmit(true);
     event.preventDefault();
     if (password !== confirm) {
       setMatchPassword(false);
+      setSubmit(false);
+    } else {
+      const fecthData = async (event) => {
+        try {
+          const formData = validationSchema.parse({
+            name: event.target[1].value,
+            email: event.target[2].value,
+            password: event.target[3].value,
+            confirm: event.target[4].value,
+            termsAndConditions: event.target[5].checked,
+          });
+
+          const response = await fetch(" http://localhost:3000/signup", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              profilePicture: profilePicture,
+              name: formData.name,
+              email: formData.email,
+              password: formData.password,
+            }),
+          });
+          setSubmit(false);
+
+          if (response) {
+            const url = new URL(response.url);
+            const path = url.pathname;
+            const query = url.search;
+
+            if (path == "/login") {
+              setTimeout(() => {
+                alert("User already exist, please login");
+                navigate(path);
+              }, 500);
+            } else {
+              if (query) {
+                localStorage.setItem("token", query);
+              }
+              navigate(path);
+            }
+          }
+        } catch (error) {
+          setSubmit(false);
+          const validationErrors = error.errors;
+          const errorMessages = {
+            name: validationErrors.find((error) => error.path[0] === "name"),
+            email: validationErrors.find((error) => error.path[0] === "email"),
+            password: validationErrors.find(
+              (error) => error.path[0] === "password"
+            ),
+            confirm: validationErrors.find(
+              (error) => error.path[0] === "confirm"
+            ),
+          };
+          setValidationErrors(errorMessages);
+        }
+      };
+      fecthData(event);
     }
   };
 
@@ -93,7 +166,7 @@ const SignUpPage = () => {
             </h1>
             <p className="ml-8  text-gray-300 poppins-medium">
               or{" "}
-              <Link to="/">
+              <Link to="/login">
                 <span className="text-cyan-400">log in</span>
               </Link>{" "}
               if you already have an account
@@ -144,6 +217,9 @@ const SignUpPage = () => {
                   size="1.8rem "
                 />
               </span>
+              <span className="text-red-600 ">
+                {errors.name && `*${errors.confirm.message}`}
+              </span>
 
               <span className="flex rounded-[15px] bg-slate-700 relative h-12 px-6 ">
                 <label
@@ -161,6 +237,9 @@ const SignUpPage = () => {
                   onChange={handleInputChange}
                 />
                 <MdOutlineMail className=" text-white my-auto" size="1.8rem" />
+              </span>
+              <span className="text-red-600">
+                {errors.email && `*${errors.confirm.message}`}
               </span>
               <span className="flex rounded-[15px] bg-slate-700 relative h-12 px-6">
                 <label
@@ -194,6 +273,9 @@ const SignUpPage = () => {
                 )}
               </span>
               <span className="text-red-600">
+                {errors.password && `*${errors.confirm.message}`}
+              </span>
+              <span className="text-red-600">
                 {matchPassword ? " " : "*Password doesn't match"}
               </span>
               <span className="flex rounded-[15px] bg-slate-700 relative h-12 px-6">
@@ -225,13 +307,42 @@ const SignUpPage = () => {
                   />
                 )}
               </span>
-              <button
-                type="submit"
-                className="bg-cyan-400 px-3 text-sm  p-4 rounded-full  shadow-xxl text-white mt-6"
-                onClick={() => {}}
-              >
-                Create account
-              </button>
+              <span className="text-red-600">
+                {errors.confirm && `*${errors.confirm.message}`}
+              </span>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="termsAndConditions"
+                  onChange={handleInputChange}
+                />
+                <label htmlFor="termsAndConditions" className="ml-2 text-white">
+                  I accept the{" "}
+                  <Link to={"#"} className="text-cyan-800">
+                    terms & conditions
+                  </Link>
+                </label>
+              </div>
+
+              {termsAndConditions ? (
+                <button
+                  disabled={submit}
+                  type="submit"
+                  className={` px-3 text-sm  p-4 rounded-full  shadow-xl text-white mt-6 bg-cyan-400 ${
+                    submit === true ? "cursor-not-allowed" : "cursor-pointer"
+                  } `}
+                >
+                  {submit ? "Creating account..." : "Create account"}
+                </button>
+              ) : (
+                <button
+                  disabled={true}
+                  type="submit"
+                  className=" px-3 text-sm  p-4 rounded-full  shadow-xl text-white mt-6 bg-slate-400 "
+                >
+                  Create account
+                </button>
+              )}
             </form>
           </div>
         </div>
