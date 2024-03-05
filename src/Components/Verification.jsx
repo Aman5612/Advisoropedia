@@ -5,22 +5,21 @@ import { useNavigate, useParams } from "react-router-dom";
 
 const VerificationPage = () => {
   const { token } = useParams();
+  const newToken = "Bearer " + token;
   const [verificationStatus, setVerificationStatus] = useState(null);
   const navigate = useNavigate();
-  console.log(token);
+  console.log(newToken);
 
   useEffect(() => {
     const verifyEmail = async () => {
       try {
         const response = await fetch(
-          `http://localhost:3000/verify-email/${token}`
+          `http://localhost:3000/verify/${newToken}`
         );
-        console.log(response.json());
         if (response) {
           console.log(response);
           const result = await response.json();
           setVerificationStatus(result.verificationStatus);
-          console.log(result.token);
 
           localStorage.setItem("token", result.token);
         } else {
@@ -37,7 +36,7 @@ const VerificationPage = () => {
   }, [token]);
 
   useEffect(() => {
-    if (verificationStatus !== "failed") {
+    if (verificationStatus === "success") {
       navigate("/login");
     }
   }, [verificationStatus, navigate]);

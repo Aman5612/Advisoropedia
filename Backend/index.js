@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const Post = require('./models/Post');
 const bcrypt = require("bcrypt");
 const app = express();
 require("dotenv").config();
@@ -63,10 +64,8 @@ app.get("/verify/:token", (req, res) => {
 
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
-    console.log("Verification successful: ", decoded);
     res.render("verification", { token, verificationStatus: "success" });
   } catch (error) {
-    console.log("Verification failed: ", error.message);
     let verificationStatus;
     if (error.name === "TokenExpiredError") {
       verificationStatus = "Token Expired";
@@ -85,7 +84,7 @@ app.get("/", authenticateUser, (req, res) => {
 });
 
 app.get("/login-token", authenticateUser, (req, res) => {
-  console.log(req.body);
+  console.log(">>>>>>>>>>>>>>>>>>>.", req.body);
   const { profilePicture, name, email, password } = req.body;
   res.send({ profilePicture, name, email, password });
 });
@@ -93,14 +92,24 @@ app.get("/login-token", authenticateUser, (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(email, password);
 
     const user = await User.findOne({ email: email });
+
+    console.log(user);
+
+    if (!user) {
+      res.json({ message: "Invalid credentials" });
+      return;
+    }
 
     const hashedPassword = user.password;
     const comparePasswords = async (plainPassword, hashedPassword) => {
       return await bcrypt.compare(plainPassword, hashedPassword);
     };
     const isMatch = await comparePasswords(password, hashedPassword);
+
+    console.log(isMatch);
 
     if (isMatch) {
       const token = jwt.sign(
@@ -110,15 +119,39 @@ app.post("/login", async (req, res) => {
           expiresIn: "10h",
         }
       );
-      res.json({ message: "Login successful", token });
+      res.json({ message: "Success", token });
     } else {
-      res.json({ message: "Invalid credentials" });
+      res.json({ message: "Invalid" });
     }
   } catch (error) {
     console.error(error);
     throw error;
   }
 });
+
+app.get("/posts", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1; 
+    const limit = parseInt(req.query.limit) || 5; 
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const posts = await Post.find().limit(limit).skip(startIndex).exec();
+    const totalPosts = await Post.countDocuments();
+
+    const pagination = {
+      totalPages: Math.ceil(totalPosts / limit),
+      currentPage: page,
+    };
+
+    res.json({ posts, pagination });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 
 app.post("/signup", async (req, res) => {
   try {

@@ -11,7 +11,7 @@ const LoginPage = () => {
   const [submit, setSubmit] = useState(false);
   const [emailHasContent, setEmailHasContent] = useState(false);
   const [passwordHasContent, setPasswordHasContent] = useState(false);
-  const [errors, setValidationErrors] = useState({});
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
@@ -21,12 +21,12 @@ const LoginPage = () => {
     switch (fieldName) {
       case "email":
         setEmailHasContent(event.target.value !== "");
-        setValidationErrors({});
+        setErrors({});
         break;
       case "password":
         setPasswordHasContent(event.target.value !== "");
         setPassword(event.target.value);
-        setValidationErrors({});
+        setErrors({});
         break;
       default:
         break;
@@ -48,7 +48,7 @@ const LoginPage = () => {
 
       if (token) {
         try {
-          await fetch("http://localhost:3000/login-token", {
+          const response = await fetch("http://localhost:3000/login-token", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -56,15 +56,22 @@ const LoginPage = () => {
             },
           });
 
+          if (response.ok) {
+            const result = await response.json();
+            console.log(result);
+            navigate("/");
+          } else {
+            localStorage.removeItem("token");
+            console.log("Authentication failed");
+          }
+
           setSubmit(false);
-          navigate("/");
           return;
         } catch (error) {
           console.error(error);
           throw error;
         }
       }
-
       const response = await fetch("http://localhost:3000/login", {
         method: "POST",
         headers: {
@@ -73,13 +80,19 @@ const LoginPage = () => {
         body: JSON.stringify(data),
       });
 
-      if (response.ok) {
-        const { token } = await response.json();
+      const resBody = await response.json();
+      if (resBody.message === "Success") {
+        const { token } = resBody;
         localStorage.setItem("token", token);
         setSubmit(false);
         navigate("/");
       } else {
-        console.error("Authentication failed");
+        const errorData = resBody;
+        if (errorData.errors) {
+          setErrors(errorData.errors);
+        } else {
+          alert("Invalid credentials, please try again");
+        }
         setSubmit(false);
       }
     } catch (error) {
@@ -101,20 +114,20 @@ const LoginPage = () => {
           />
 
           <div className="pl-12 py-4">
-            <p className="ml-8 text-gray-300 poppins-medium text-xl ">
+            <p className="ml-8 text-gray-300 poppins-medium text-xl max-sm:text-xs mb-2">
               Welcome back!
             </p>
-            <h1 className="text-[50px] max-lg:text-[30px] max-sm:text-lg text-white text poppins-medium -mt-4">
+            <h1 className="text-[50px] max-lg:text-[30px] max-sm:text-lg text-white text poppins-medium ">
               Login to your account
             </h1>
-            <p className="ml-8 text-gray-300 poppins-medium">
+            <p className="ml-8 text-gray-300 poppins-medium max-sm:text-xs mt-2">
               Don&apos;t have an account?{" "}
               <Link to="/signup">
                 <span className="text-cyan-400">Sign up here</span>
               </Link>
             </p>
             <form
-              className="flex flex-col items-center md:ml-14 md:items-start gap-2 mr-12 "
+              className="flex flex-col items-center md:ml-14 md:items-start gap-2 mt-4 mr-12 "
               onSubmit={handleSubmit}
             >
               <span className="flex rounded-[15px] bg-slate-700 relative h-12 px-6 ">
@@ -128,15 +141,14 @@ const LoginPage = () => {
                 </label>
                 <input
                   id="email"
-                  className=" bg-slate-700 focus:outline-none  text-white  poppins-medium "
+                  required
+                  className=" bg-slate-700 focus:outline-none  md:w-80  text-white  poppins-medium "
                   type="email"
                   onChange={handleInputChange}
                 />
                 <MdOutlineMail className=" text-white my-auto" size="1.8rem" />
               </span>
-              <span className="text-red-600">
-                {errors.email && `*${errors.confirm.message}`}
-              </span>
+
               <span className="flex rounded-[15px] bg-slate-700 relative h-12 px-6">
                 <label
                   htmlFor="password"
@@ -147,8 +159,9 @@ const LoginPage = () => {
                   Password
                 </label>
                 <input
+                  required
                   id="password"
-                  className=" bg-slate-700 focus:outline-none  text-white mt-2 poppins-medium "
+                  className=" bg-slate-700 focus:outline-none  md:w-80 text-white mt-2 poppins-medium "
                   type={visible ? "text" : "password"}
                   onChange={handleInputChange}
                 />
@@ -166,13 +179,11 @@ const LoginPage = () => {
                   />
                 )}
               </span>
-              <span className="text-red-600">
-                {errors.password && `*${errors.confirm.message}`}
-              </span>
+
               <button
                 disabled={submit}
                 type="submit"
-                className={`bg-cyan-400 px-3 text-sm  p-4 rounded-full  shadow-xl text-white mt-6 ${
+                className={`bg-cyan-400 px-3 text-sm w-40 p-4 rounded-full  shadow-xl text-white mt-6 ${
                   submit === true ? "cursor-not-allowed" : "cursor-pointer"
                 }`}
               >

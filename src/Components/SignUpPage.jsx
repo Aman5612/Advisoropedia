@@ -175,7 +175,7 @@ const SignUpPage = () => {
               className="flex flex-col items-center md:ml-14 md:items-start gap-2 mr-12 "
               onSubmit={handleSubmit}
             >
-              <div className="mt-8 flex flex-col w-[270px] items-center mb-4">
+              <div className="mt-8 flex flex-col w-[270px] items-center mb-4 md:ml-10">
                 <label htmlFor="profile-picture">
                   <img
                     className="h-20 w-20 rounded-full object-cover cursor-pointer border-2"
@@ -208,7 +208,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   id="first-name"
-                  className=" bg-slate-700 focus:outline-none  text-white  poppins-medium "
+                  className=" bg-slate-700 focus:outline-none  text-white md:w-80 poppins-medium "
                   type="text"
                   onChange={handleInputChange}
                 />
@@ -232,7 +232,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   id="email"
-                  className=" bg-slate-700 focus:outline-none  text-white  poppins-medium "
+                  className=" bg-slate-700 focus:outline-none  text-white  md:w-80  poppins-medium "
                   type="email"
                   onChange={handleInputChange}
                 />
@@ -252,7 +252,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   id="password"
-                  className=" bg-slate-700 focus:outline-none  text-white mt-2 poppins-medium "
+                  className=" bg-slate-700 focus:outline-none  md:w-80 text-white mt-2 poppins-medium "
                   type={visible ? "text" : "password"}
                   onChange={(event) => {
                     handleInputChange(event);
@@ -289,7 +289,7 @@ const SignUpPage = () => {
                 </label>
                 <input
                   id="confirm"
-                  className=" bg-slate-700 focus:outline-none  text-white mt-2 poppins-medium "
+                  className=" bg-slate-700 focus:outline-none  md:w-80 text-white mt-2 poppins-medium "
                   type={confirmVisible ? "text" : "password"}
                   onChange={handleInputChange}
                 />
